@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Customer Page</title>
     <style>
         body {
             background: #121212;
@@ -36,6 +36,14 @@
             margin: 20px 0;
             width: 80%;
             max-width: 600px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: max-height 0.3s ease-in-out;
+            max-height: 100px; /* Изначальная высота блока */
+        }
+
+        .neomorphism-post.expanded {
+            max-height: none; /* Высота блока при нажатии */
         }
 
         .neomorphism h2, .neomorphism p, .neomorphism h3, .neomorphism h4 {
@@ -87,28 +95,50 @@
             flex: 1;
             text-align: left;
             margin-right: 20px;
-
         }
 
         .user-info {
             flex: 1;
             text-align: right;
         }
+
+        .neomorphism-post p {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal;
+            transition: max-height 0.3s ease-in-out;
+            word-wrap: break-word; /* Перенос длинных слов */
+        }
+
+        .neomorphism-post.expanded p {
+            max-height: none;
+        }
     </style>
 </head>
 <body>
-@auth()
+@php
+    use Illuminate\Support\Str;
+
+    $userEmail = Auth::user()->email;
+    $allowedDomain = '@customer.com';
+    $userHasAccess = Str::endsWith($userEmail, $allowedDomain);
+@endphp
+@auth
+
+
+    @if ($userHasAccess)
+
     <div class="neomorphism">
         <div class="greeting-s">
             <h1>Hello, {{ Auth::user()->name }}</h1>
-            <h5>Welcome to your courses, author!
-            <br>
-            Here, you can create, remove, update and delete your courses, explore your content.<br>
-            Enjoy your stay and feel free to express yourself! </h5>
+            <h5>Welcome to the customer page!
+                <br>
+                Here, you can see courses created by all users.<br>
+                Enjoy your stay!</h5>
         </div>
         <div class="user-info">
             <h5>
-            <p>Your email: {{ Auth::user()->email }}</p></h5>
+                <p>Your email: {{ Auth::user()->email }}</p></h5>
             <form action="/logout" method="post">
                 @csrf
                 <button>Log out</button>
@@ -116,42 +146,31 @@
         </div>
     </div>
     <div class="neomorphism">
-        <h2>Create a course</h2>
-        <form action="/create-post" method="post">
-            @csrf
-            <input type="text" name="title" placeholder="post title" required>
-            <br>
-            <br>
-            <textarea name="body" placeholder="body content..." required></textarea>
-            <br>
-            <br>
-            <button>Save post</button>
-        </form>
-    </div>
-    <div class="neomorphism">
         <h2>Courses</h2>
         @foreach($posts as $post)
-            <div class="neomorphism-post">
-                <h3>{{$post['title']}}  (by  {{$post->user->name}})</h3>
-                <p>{{$post['body']}}</p>
-                <a href="/edit-post/{{$post->id}}">Edit</a>
-                <form action="/delete-post/{{$post->id}}" method="post" style="display:inline;">
-                    @csrf
-                    @method('DELETE')
-                    <button>Delete</button>
-                </form>
+            <div class="neomorphism-post" onclick="toggleExpand(this)">
+                <h3>{{$post->title}} (by {{$post->user->name}})</h3>
+                <p>{{$post->body}}</p>
             </div>
         @endforeach
     </div>
+    @else
+
+        <div class="neomorphism">
+            <div class="greeting-s">
+                <h2>Access Denied</h2>
+                <h5>You do not have permission to access this page.</h5>
+            </div>
+        </div>
+    @endif
 @else
     <div class="neomorphism">
         <div class="greeting-s">
             <h2>Hello user!</h2>
-                <h5>Join our community to share your thoughts and connect with others.
+            <h5>Join our community to share your thoughts and connect with others.
                 <br>If you already have an account, please log in to continue.
                 <br>New here?
                 Register now to get started!</h5>
-
         </div>
     </div>
     <div class="neomorphism">
@@ -178,5 +197,11 @@
         </form>
     </div>
 @endauth
+
+<script>
+    function toggleExpand(element) {
+        element.classList.toggle('expanded');
+    }
+</script>
 </body>
 </html>
